@@ -12,6 +12,6 @@ export default defineSchema({
     name: v.string(),
     address: v.string(),
   })
-    .index("by_checked_at", ["checkedAt"])
-    .index("by_station_checked_at", ["stationId", "checkedAt"]),
+    .index("by_checkedAt", ["checkedAt"])
+    .index("by_stationId_and_checkedAt", ["stationId", "checkedAt"]),
 });

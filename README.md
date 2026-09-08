@@ -1,53 +1,50 @@
-# ZSE Drive connector monitor
+# ChargeWatch
 
-The monitor checks stations `73151` and `72182` every five minutes and appends
-one row per connector to `connector_availability.xlsx`.
+ChargeWatch checks ZSE Drive stations `73151` and `72182` every minute and
+stores one snapshot per connector in Convex.
 
-The workbook contains:
+Each snapshot contains the station ID, connector ID, EVSE ID, normalized and
+raw state, check time, station name, and address.
 
-- `station_id`
-- `connector_id`
-- `evse_id`
-- `state` (`available`, `unavailable`, or the API's unrecognized state)
-- `checked_at` (local time with UTC offset)
-- `name`
-- `address`
+## Convex backend
 
-## Setup
+Install dependencies and connect a development deployment:
 
 ```bash
-cd /Users/ms639x/Projects/adam_charger
+npm install
+npx convex dev --once
+```
+
+The one-minute schedule is defined in `convex/crons.ts`. It invokes the
+collector action, which fetches both stations in parallel and writes successful
+responses in one mutation.
+
+Run and inspect the collector manually:
+
+```bash
+npx convex run stations:collect '{}'
+npx convex run stations:latest '{}'
+npx convex run stations:history '{"stationId":73151,"limit":100}'
+```
+
+The public `stations:latest` and `stations:history` queries are ready for a
+React or Next.js frontend using Convex subscriptions.
+
+Deploy the backend to production only after verifying the development
+deployment:
+
+```bash
+npx convex deploy
+```
+
+`.env.local` identifies the linked local deployment and must not be committed.
+
+## Local Python utility
+
+The original Python monitor remains available for local Excel or SQLite export:
+
+```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
+.venv/bin/python monitor.py --once --excel connector_availability.xlsx
 ```
-
-Run continuously, checking every 300 seconds:
-
-```bash
-.venv/bin/python monitor.py
-```
-
-Keep that process running. Stop it with `Ctrl+C`.
-
-To verify a single check without starting the loop:
-
-```bash
-.venv/bin/python monitor.py --once
-```
-
-Custom stations or interval can be supplied when needed:
-
-```bash
-.venv/bin/python monitor.py --stations 73151 72182 --interval 300
-```
-
-Run a bounded high-frequency capture and write all buffered samples at the end:
-
-```bash
-.venv/bin/python monitor.py --interval 0.1 --duration 5 --timeout 1
-```
-
-The interval is a target. Sampling cannot be faster than the API response time.
-
-Do not keep the Excel workbook open while the script writes to it. Excel may
-lock the file and cause that check to fail.

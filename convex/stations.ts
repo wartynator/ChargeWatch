@@ -6,6 +6,7 @@ import {
   internalMutation,
   query,
 } from "./_generated/server";
+import schema from "./schema";
 
 const STATION_IDS = [73151, 72182] as const;
 const API_URL = "https://zsedrive.sk/api/v4.7/stations";
@@ -100,7 +101,8 @@ async function fetchStation(stationId: number): Promise<Snapshot[]> {
 
 export const collect = internalAction({
   args: {},
-  handler: async (ctx): Promise<void> => {
+  returns: v.null(),
+  handler: async (ctx): Promise<null> => {
     const results = await Promise.allSettled(STATION_IDS.map(fetchStation));
     const snapshots = results.flatMap((result, index) => {
       if (result.status === "fulfilled") return result.value;
@@ -112,26 +114,30 @@ export const collect = internalAction({
       throw new Error("All station requests failed");
     }
     await ctx.runMutation(internal.stations.insertSnapshots, { snapshots });
+    return null;
   },
 });
 
 export const insertSnapshots = internalMutation({
   args: { snapshots: v.array(snapshotValidator) },
+  returns: v.null(),
   handler: async (ctx, { snapshots }) => {
     await Promise.all(
       snapshots.map((snapshot) =>
         ctx.db.insert("connectorAvailability", snapshot),
       ),
     );
+    return null;
   },
 });
 
 export const latest = query({
   args: {},
+  returns: v.array(schema.doc("connectorAvailability")),
   handler: async (ctx) => {
     const recent = await ctx.db
       .query("connectorAvailability")
-      .withIndex("by_checked_at")
+      .withIndex("by_checkedAt")
       .order("desc")
       .take(100);
     const seen = new Set<string>();
@@ -149,10 +155,11 @@ export const history = query({
     stationId: v.number(),
     limit: v.optional(v.number()),
   },
+  returns: v.array(schema.doc("connectorAvailability")),
   handler: async (ctx, { stationId, limit }) =>
     ctx.db
       .query("connectorAvailability")
-      .withIndex("by_station_checked_at", (queryBuilder) =>
+      .withIndex("by_stationId_and_checkedAt", (queryBuilder) =>
         queryBuilder.eq("stationId", stationId),
       )
       .order("desc")

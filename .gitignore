@@ -1,9 +1,15 @@
 .convex/
 .env.local
 .venv/
+.agents/
+.claude/
+CLAUDE.md
+skills-lock.json
 node_modules/
 __pycache__/
 *.pyc
 *.xlsx
 *.db
 data/
+.agents
+.claude
