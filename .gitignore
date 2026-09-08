@@ -1,0 +1,9 @@
+.convex/
+.env.local
+.venv/
+node_modules/
+__pycache__/
+*.pyc
+*.xlsx
+*.db
+data/

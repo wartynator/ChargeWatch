@@ -1,0 +1,16 @@
+{
+  "name": "adam-charger-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "convex:dev": "convex dev",
+    "convex:deploy": "convex deploy"
+  },
+  "dependencies": {
+    "convex": "^1.27.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}
